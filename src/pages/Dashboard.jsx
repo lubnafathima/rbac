@@ -1,7 +1,6 @@
-import { Menu, MenuButton, MenuItem, MenuItems } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/20/solid";
 import ProfileImg from "../assets/img/profile.jpg";
 import { MdOutlineFileDownload } from "react-icons/md";
+import Dropdown from "../components/Dropdown";
 
 const data = [
   { id: 0, role: "Admin", member_count: 1 },
@@ -9,43 +8,17 @@ const data = [
   { id: 2, role: "Creator Lite", member_count: 1 },
 ];
 
-const dropdownOptions = [
-  { label: 'All', value: 'all' },
-  { label: 'Admin', value: 'admin' },
-  { label: 'Creators', value: 'creators' },
-  { label: 'Creator Lite', value: 'creator_lite' },
+const roleOptions = [
+  { label: "All", value: "all" },
+  { label: "Admin", value: "admin" },
+  { label: "Creators", value: "creators" },
+  { label: "Creator Lite", value: "creator_lite" },
 ];
 
 const statusOptions = [
-  { label: 'Active', value: 'active' },
-  { label: 'Inactive', value: 'inactive' },
+  { label: "Active", value: "active" },
+  { label: "Inactive", value: "inactive" },
 ];
-
-const Dropdown = ({ label, options }) => (
-  <Menu as="div" className="relative inline-block text-left">
-    <div>
-      <MenuButton className="inline-flex min-w-36 justify-between gap-x-1.5 rounded-full bg-white px-3 py-2 text-sm font-semibold shadow-sm ring-1 ring-inset ring-gray-200 hover:bg-gray-50">
-        {label}
-        <ChevronDownIcon aria-hidden="true" className="-mr-1 size-5" />
-      </MenuButton>
-    </div>
-    <MenuItems className="absolute right-0 z-10 mt-2 w-36 origin-top-right rounded-md bg-white shadow-md ring-1 ring-black/5">
-      {options.map(({ label, value }) => (
-        <div key={value} className="py-1">
-          <MenuItem>
-            <a
-              href="#"
-              className="block px-4 py-1 text-sm text-gray-700 hover:bg-gray-100 focus:bg-gray-100"
-            >
-              {label}
-            </a>
-          </MenuItem>
-        </div>
-      ))}
-    </MenuItems>
-  </Menu>
-);
-
 const Dashboard = () => {
   return (
     <div className="w-full flex flex-col mt-10 px-2 md:px-10 lg:px-20">
@@ -53,7 +26,10 @@ const Dashboard = () => {
       <h2 className="text-xl font-bold mt-10 mb-6">Members (2)</h2>
       <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 bg-blue-100 rounded-xl py-4">
         {data.map(({ id, member_count, role }) => (
-          <div key={id} className="w-full flex justify-between items-end px-8 py-4 border-r border-gray-300 last:border-0">
+          <div
+            key={id}
+            className="w-full flex justify-between items-end px-8 py-4 border-r border-gray-300 last:border-0"
+          >
             <div className="flex flex-col gap-2">
               <h3 className="text-2xl font-bold">{member_count}</h3>
               <p className="text-md font-medium">{role}</p>
@@ -73,7 +49,7 @@ const Dashboard = () => {
             placeholder="Enter a name or email address"
             className="text-sm border rounded-full px-4 py-2 min-w-80 shadow-sm outline-none"
           />
-          <Dropdown label="Role" options={dropdownOptions} />
+          <Dropdown label="Role" options={roleOptions} />
           <Dropdown label="Status" options={statusOptions} />
           <p className="text-sm text-blue-600 font-bold border-b-2 border-blue-600 cursor-pointer">
             Clear
@@ -89,6 +65,47 @@ const Dashboard = () => {
           </button>
         </div>
       </div>
+      <table className="table-auto w-full border-collapse">
+        <thead>
+          <tr>
+            <th className="text-start py-2 px-4">
+              <input type="checkbox" />
+            </th>
+            <th className="text-start text-xs text-gray-500 font-semibold py-2 px-4">
+              Member
+            </th>
+            <th className="text-start text-xs text-gray-500 font-semibold py-2 px-4">
+              Role
+            </th>
+            <th className="text-start text-xs text-gray-500 font-semibold py-2 px-4">
+              Date added
+            </th>
+            <th className="text-start text-xs text-gray-500 font-semibold py-2 px-4">
+              Email address
+            </th>
+            <th className="text-start text-xs text-gray-500 font-semibold py-2 px-4">
+              Status
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((member, index) => (
+            <tr
+              key={member.id}
+              className={index % 2 === 0 ? "bg-gray-100" : "bg-white"}
+            >
+              <td className="py-2 px-4">
+                <input type="checkbox" />
+              </td>
+              <td className="py-2 px-4 text-sm text-black">{member.role}</td>
+              <td className="py-2 px-4 text-sm text-gray-600">{member.role}</td>
+              <td className="py-2 px-4 text-sm text-gray-600">29 July 2024</td>
+              <td className="py-2 px-4 text-sm text-gray-600 underline">{`${member.role.toLowerCase()}@gmail.com`}</td>
+              <td className="py-2 px-4 text-sm text-gray-600">Active</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
