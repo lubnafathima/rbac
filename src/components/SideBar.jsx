@@ -24,13 +24,15 @@ const menuItems = {
   ],
   spaces: [
     { icon: <CiSearch className="text-xl" />, label: "Browse Spaces" },
-    { icon: null, label: "My Space" }, // This item will have a custom icon
+    { icon: null, label: "My Space" }, 
   ],
 };
 
-const SideBar = () => {
+const SideBar = ({ isVisible }) => {
   return (
-    <div className="fixed w-72 h-screen bg-gray-50 md:flex flex-col gap-2 p-4 hidden">
+    <div
+      className={`z-50 fixed w-72 h-screen bg-gray-50 md:flex flex-col gap-2 p-4 ${isVisible ? "flex" : "hidden"} md:block`}
+    >
       <h1 className="text-xl font-extrabold flex flex-wrap items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-full">
         <FaUserFriends className="text-2xl" /> RBAC
       </h1>
