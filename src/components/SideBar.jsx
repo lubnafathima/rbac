@@ -9,6 +9,7 @@ import {
 } from "react-icons/ci";
 import { FaPlus } from "react-icons/fa6";
 import { FaUserFriends } from "react-icons/fa";
+import { MdOutlineClose } from "react-icons/md";
 
 const menuItems = {
   mainMenu: [
@@ -24,15 +25,23 @@ const menuItems = {
   ],
   spaces: [
     { icon: <CiSearch className="text-xl" />, label: "Browse Spaces" },
-    { icon: null, label: "My Space" }, 
+    { icon: null, label: "My Space" },
   ],
 };
 
-const SideBar = ({ isVisible }) => {
+const SideBar = ({ isVisible, toggleSidebar }) => {
   return (
     <div
-      className={`z-50 fixed w-72 h-screen bg-gray-50 md:flex flex-col gap-2 p-4 ${isVisible ? "flex" : "hidden"} md:block`}
+      className={`z-50 fixed w-72 h-screen bg-gray-50 md:flex flex-col gap-2 p-4 ${
+        isVisible ? "flex" : "hidden"
+      } md:block`}
     >
+      <div className="flex justify-end md:hidden">
+        <MdOutlineClose
+          className="text-xl text-gray-600 cursor-pointer"
+          onClick={toggleSidebar} 
+        />
+      </div>
       <h1 className="text-xl font-extrabold flex flex-wrap items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-full">
         <FaUserFriends className="text-2xl" /> RBAC
       </h1>

@@ -12,7 +12,7 @@ const Layout = () => {
 
   return (
     <div className="relative flex w-full min-h-screen font-[Helvetica] tracking-wide">
-      <SideBar isVisible={isSidebarVisible} />
+      <SideBar isVisible={isSidebarVisible} toggleSidebar={toggleSidebar} />
       <div className="md:ml-72 w-full min-h-screen h-full p-6 bg-white">
         <Navbar toggleSidebar={toggleSidebar} />
         <div className="pt-4">
