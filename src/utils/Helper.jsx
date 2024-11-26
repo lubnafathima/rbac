@@ -40,3 +40,5 @@ export const roleOptions = [
   { label: "Creators", value: "creators" },
   { label: "Creator Lite", value: "creator_lite" },
 ];
+
+export const statusOptions = ["All", "Active", "Inactive"];

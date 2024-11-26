@@ -1,97 +1,194 @@
 import { useState, useEffect, useCallback } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  getDocs,
+  Timestamp,
+  doc,
+  deleteDoc,
+} from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
-import Dropdown from "../components/Dropdown";
-import { MdOutlineFileDownload } from "react-icons/md";
 import UserTable from "../components/UserTable";
 import MemberStats from "../components/MemberStats";
-import { roleOptions } from "../utils/Helper";
-
-// Helper function to format Firestore timestamp to MM/DD/YYYY
-const formatDate = (timestamp) => {
-  if (!timestamp) return ""; // If no timestamp, return empty string
-  const date = timestamp.toDate(); // Convert Firestore Timestamp to JavaScript Date
-  return `${date.getMonth() + 1}/${date.getDate()}/${date.getFullYear()}`; // Format as MM/DD/YYYY
-};
+import {
+  MdOutlineFileDownload,
+  MdOutlineAdd,
+  MdEdit,
+  MdDelete,
+} from "react-icons/md";
+import Dropdown from "../components/Dropdown";
+import Modal from "../components/Modal";
+import { statusOptions, roleOptions } from "../utils/Helper";
 
 const Dashboard = () => {
-  const [users, setUsers] = useState([]); // Store all users from Firestore
-  const [filteredUsers, setFilteredUsers] = useState([]); // Store filtered users based on search and role
-  const [searchQuery, setSearchQuery] = useState(""); // Store the search query
-  const [selectedRole, setSelectedRole] = useState("all"); // Store selected role filter
+  const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("All");
+  const [showModal, setShowModal] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    member_name: "",
+    member_email: "",
+    member_role: "Admin",
+  });
 
-  // Fetch users from Firestore and store them
+  const [selectedUsers, setSelectedUsers] = useState([]); // Track selected users
+
+  // Function to fetch users from Firestore
   const fetchUsers = useCallback(async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "users"));
       const usersData = querySnapshot.docs.map((doc) => ({
-        id: doc.id, // Firestore document ID
-        ...doc.data(), // Firestore document data
+        id: doc.id,
+        ...doc.data(),
       }));
-      setUsers(usersData);
-      setFilteredUsers(usersData); // Initially, show all users
+      setUsers(usersData); // Set users to state
     } catch (error) {
       console.error("Error fetching users: ", error);
     }
   }, []);
 
+  // Function to apply filters based on search query, role, and status
+  const filterUsers = () => {
+    let filtered = users;
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (user) =>
+          user.member_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          user.member_email.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Apply role filter
+    if (selectedRole !== "all") {
+      filtered = filtered.filter((user) => user.member_role.toLowerCase() === selectedRole);
+    }
+
+    // Apply status filter
+    if (selectedStatus !== "All") {
+      filtered = filtered.filter((user) => user.Status === selectedStatus);
+    }
+
+    setFilteredUsers(filtered); // Update filtered users state
+  };
+
+  // Fetch users on mount and filter users when dependencies change
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {
-    const filtered = users.filter(user => {
-      const matchesSearch = user.member_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            user.member_email?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesRole = selectedRole === "all" || 
-                          user.member_role?.toLowerCase() === selectedRole.toLowerCase();
-
-      return matchesSearch && matchesRole;
-    });
-    setFilteredUsers(filtered);
-  }, [searchQuery, selectedRole, users]);
+    filterUsers(); // Re-filter users whenever search, role, or status changes
+  }, [searchQuery, selectedRole, selectedStatus, users]); // Dependencies include 'users'
 
   const handleRoleChange = (role) => setSelectedRole(role.toLowerCase());
+  const handleStatusChange = (status) => setSelectedStatus(status);
+
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedRole("all");
+    setSelectedStatus("All");
   };
 
-  // Function to download the entire Firestore data (no filtering)
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+
+    const { member_name, member_email, member_role } = newUserData;
+
+    if (member_name && member_email && member_role) {
+      try {
+        await addDoc(collection(db, "users"), {
+          member_name,
+          member_email,
+          member_role,
+          Status: "Active",
+          date_added: Timestamp.fromDate(new Date()),
+        });
+        fetchUsers(); // Re-fetch users after adding
+        setShowModal(false);
+        setNewUserData({
+          member_name: "",
+          member_email: "",
+          member_role: "Admin",
+        });
+      } catch (error) {
+        console.error("Error adding user: ", error);
+      }
+    }
+  };
+
+  const handleCheckboxChange = (userId) => {
+    if (selectedUsers.includes(userId)) {
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
+    } else {
+      setSelectedUsers([...selectedUsers, userId]);
+    }
+  };
+
+  const handleSelectAllChange = (e) => {
+    if (e.target.checked) {
+      setSelectedUsers(filteredUsers.map((user) => user.id)); // Select all users
+    } else {
+      setSelectedUsers([]); // Deselect all users
+    }
+  };
+
+  const deleteUsers = async () => {
+    try {
+      if (Array.isArray(selectedUsers) && selectedUsers.length > 0) {
+        for (const userId of selectedUsers) {
+          const userDocRef = doc(db, "users", userId);
+          await deleteDoc(userDocRef);
+        }
+        fetchUsers(); // Refresh after deletion
+        setSelectedUsers([]); // Clear selected users
+      } else {
+        console.error("No users selected for deletion");
+      }
+    } catch (error) {
+      console.error("Error deleting users: ", error);
+    }
+  };
+
   const downloadCSV = () => {
-    const csvRows = [];
-    const headers = ["id", "member_name", "member_email", "date_added", "member_role", "status"]; // Columns in exact case-sensitive order
-    csvRows.push(headers.join(","));
+    const headers = ["ID", "Name", "Email", "Role", "Status", "Date Added"];
+    const rows = filteredUsers.map((user) => [
+      user.id,
+      user.member_name,
+      user.member_email,
+      user.member_role,
+      user.Status,
+      new Date(user.date_added.seconds * 1000).toLocaleDateString(),
+    ]);
 
-    users.forEach(user => {
-      const row = [
-        user.id || "", // Firestore ID
-        user.member_name || "",
-        user.member_email || "",
-        formatDate(user.date_added) || "", // Format the timestamp
-        user.member_role || "",
-        user.Status || "" // Make sure to use "status" key here (as per Firestore)
-      ];
-      csvRows.push(row.join(","));
-    });
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ]
+      .map((e) => e.replace(/\n/g, ""))
+      .join("\n");
 
-    // Create a downloadable link
-    const csvString = csvRows.join("\n");
-    const blob = new Blob([csvString], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "users.csv";
-    a.click();
-    URL.revokeObjectURL(url); // Clean up the URL object after the download
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute("download", "users.csv");
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
   };
 
   return (
     <div className="w-full flex flex-col mt-10 px-2 md:px-10 lg:px-20">
       <h1 className="text-4xl font-bold border-b-2 pb-6">Workspace Settings</h1>
       <MemberStats />
-      
+
       <div className="my-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-4">
           <input
@@ -99,36 +196,80 @@ const Dashboard = () => {
             placeholder="Enter a name or email address"
             className="text-sm border rounded-full px-4 py-2 min-w-80 shadow-sm outline-none"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => setSearchQuery(e.target.value)} // Update search query
           />
-          <Dropdown 
-            label="Role" 
-            options={roleOptions} 
+          <Dropdown
+            label="Role"
+            options={roleOptions}
             selected={selectedRole}
-            onChange={handleRoleChange}
+            onChange={handleRoleChange} // Update role
+          />
+          <Dropdown
+            label="Status"
+            options={statusOptions}
+            selected={selectedStatus}
+            onChange={handleStatusChange} // Update status
           />
           <p
             className="text-sm text-blue-600 font-bold border-b-2 border-blue-600 cursor-pointer"
-            onClick={handleClearFilters}
+            onClick={handleClearFilters} // Clear filters
           >
             Clear
           </p>
         </div>
         <div className="flex items-center gap-x-2 gap-y-4">
           <button
-            className="text-sm font-semibold hover:bg-gray-50 px-4 py-2 rounded-full border-2 flex gap-2 items-center"
-            onClick={downloadCSV} // Trigger CSV download
+            className="text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 px-2 py-2 rounded-full flex gap-2 items-center"
+            onClick={downloadCSV}
           >
             <MdOutlineFileDownload className="text-xl" />
-            Download CSV
           </button>
-          <button className="text-sm font-semibold bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-full shadow-sm">
-            Invite Member
+          {selectedUsers.length === 1 && (
+            <>
+              <button className="text-sm font-semibold text-white bg-yellow-500 hover:bg-yellow-600 px-2 py-2 rounded-full flex gap-2 items-center">
+                <MdEdit className="text-xl" />
+              </button>
+              <button
+                onClick={deleteUsers}
+                className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-2 py-2 rounded-full flex gap-2 items-center"
+              >
+                <MdDelete className="text-xl" />
+              </button>
+            </>
+          )}
+          {selectedUsers.length > 1 && (
+            <button
+              onClick={deleteUsers}
+              className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-2 py-2 rounded-full flex gap-2 items-center"
+            >
+              <MdDelete className="text-xl" />
+            </button>
+          )}
+          <button
+            className="text-sm font-semibold text-white bg-green-500 hover:bg-green-600 px-2 py-2 rounded-full shadow-sm"
+            onClick={() => setShowModal(true)}
+          >
+            <MdOutlineAdd className="text-xl" />
           </button>
         </div>
       </div>
 
-      <UserTable users={filteredUsers} />
+      <UserTable
+        users={filteredUsers}
+        selectedUsers={selectedUsers}
+        handleCheckboxChange={handleCheckboxChange}
+        handleSelectAllChange={handleSelectAllChange}
+      />
+
+      {showModal && (
+        <Modal
+          newUserData={newUserData}
+          setNewUserData={setNewUserData}
+          roleOptions={roleOptions}
+          handleAddUser={handleAddUser}
+          setShowModal={setShowModal}
+        />
+      )}
     </div>
   );
 };
