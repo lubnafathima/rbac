@@ -120,7 +120,7 @@ const EditUserModal = ({
             <label className="block text-sm font-semibold mb-2">
               Permissions
             </label>
-            <div className="space-y-2">
+            <div className="space-y-2 grid grid-cols-2">
               {["invite", "manage", "record", "delete"].map((permission) => (
                 <label key={permission} className="inline-flex items-center">
                   <input
