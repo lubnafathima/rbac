@@ -24,7 +24,8 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedRole, setSelectedRole] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("All");
-  const [showModal, setShowModal] = useState(false);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [newUserData, setNewUserData] = useState({
     member_name: "",
     member_email: "",
@@ -44,10 +45,11 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error fetching users: ", error);
     }
-  });
+  }, []);
 
   const filterUsers = () => {
     let filtered = users;
+
     if (searchQuery) {
       filtered = filtered.filter(
         (user) =>
@@ -55,14 +57,17 @@ const Dashboard = () => {
           user.member_email.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
+
     if (selectedRole !== "all") {
       filtered = filtered.filter(
         (user) => user.member_role.toLowerCase() === selectedRole
       );
     }
+
     if (selectedStatus !== "All") {
       filtered = filtered.filter((user) => user.Status === selectedStatus);
     }
+
     setFilteredUsers(filtered);
   };
 
@@ -86,12 +91,9 @@ const Dashboard = () => {
     return () => unsubscribe();
   }, []);
 
-  useEffect(() => {
-    setFilteredUsers(users);
-  }, [users]);
-
   const handleRoleChange = (role) => setSelectedRole(role.toLowerCase());
   const handleStatusChange = (status) => setSelectedStatus(status);
+
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedRole("all");
@@ -100,7 +102,7 @@ const Dashboard = () => {
 
   const handleAddUser = async (e) => {
     e.preventDefault();
-    const { member_name, member_email, member_role } = newUserData;
+    const { member_name, member_email, member_role, permissions } = newUserData;
 
     if (member_name && member_email && member_role) {
       try {
@@ -110,13 +112,20 @@ const Dashboard = () => {
           member_role,
           Status: "Active",
           date_added: Timestamp.fromDate(new Date()),
+          permissions: permissions,
         });
         fetchUsers();
-        setShowModal(false);
+        setShowAddModal(false);
         setNewUserData({
           member_name: "",
           member_email: "",
           member_role: "Admin",
+          permissions: {
+            invite: false,
+            manage: false,
+            record: false,
+            delete: false,
+          },
         });
       } catch (error) {
         console.error("Error adding user: ", error);
@@ -169,28 +178,29 @@ const Dashboard = () => {
 
   const handleEditUser = async (e) => {
     e.preventDefault();
+    const { member_name, member_email, member_role, permissions, Status } =
+      selectedUserData;
 
-    const userRef = doc(db, "users", selectedUserData.id);
-
-    try {
-      await updateDoc(userRef, {
-        member_name: selectedUserData.member_name,
-        member_email: selectedUserData.member_email,
-        member_role: selectedUserData.member_role,
-        Status: selectedUserData.Status,
-      });
-
-      fetchUsers();
-
-      setShowModal(false);
-    } catch (error) {
-      console.error("Error updating user: ", error);
+    if (member_name && member_email && member_role) {
+      try {
+        await updateDoc(doc(db, "users", selectedUserData.id), {
+          member_name,
+          member_email,
+          member_role,
+          Status,
+          permissions, 
+        });
+        fetchUsers(); 
+        setShowEditModal(false); 
+      } catch (error) {
+        console.error("Error updating user: ", error);
+      }
     }
   };
 
   const openEditModal = (user) => {
     setSelectedUserData(user);
-    setShowModal(true);
+    setShowEditModal(true);
   };
 
   const downloadCSV = () => {
@@ -204,9 +214,10 @@ const Dashboard = () => {
       new Date(user.date_added.seconds * 1000).toLocaleDateString(),
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))]
-      .map((e) => e.replace(/\n/g, ""))
-      .join("\n");
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
@@ -271,7 +282,7 @@ const Dashboard = () => {
           </button>
           <button
             className="text-sm font-semibold text-white bg-green-500 hover:bg-green-600 px-2 py-2 rounded-full shadow-sm"
-            onClick={() => setShowModal(true)}
+            onClick={() => setShowAddModal(true)}
           >
             <MdOutlineAdd className="text-xl" />
           </button>
@@ -287,24 +298,24 @@ const Dashboard = () => {
         openEditModal={openEditModal}
       />
 
-      {showModal && (
+      {showAddModal && (
         <Modal
           newUserData={newUserData}
           setNewUserData={setNewUserData}
           roleOptions={roleOptions}
           handleAddUser={handleAddUser}
-          setShowModal={setShowModal}
+          setShowModal={setShowAddModal}
         />
       )}
 
-      {showModal && selectedUserData && (
+      {showEditModal && selectedUserData && (
         <EditUserModal
           selectedUserData={selectedUserData}
           setSelectedUserData={setSelectedUserData}
           statusOptions={statusOptions}
           roleOptions={roleOptions}
           handleEditUser={handleEditUser}
-          setShowModal={setShowModal}
+          setShowModal={setShowEditModal}
         />
       )}
     </div>

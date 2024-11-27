@@ -15,6 +15,27 @@ const Modal = ({
     (role) => role.value !== "all"
   );
 
+  const initializePermissions = () => {
+    return (
+      newUserData.permissions || {
+        invite: false,
+        manage: false,
+        record: false,
+        delete: false,
+      }
+    );
+  };
+
+  const handlePermissionChange = (permission) => {
+    setNewUserData({
+      ...newUserData,
+      permissions: {
+        ...initializePermissions(),
+        [permission]: !initializePermissions()[permission],
+      },
+    });
+  };
+
   return (
     <div
       className="fixed inset-0 flex justify-center items-center bg-black bg-opacity-50 z-50"
@@ -84,6 +105,27 @@ const Modal = ({
               </label>
             ))}
           </div>
+
+          {/* Permission checkboxes */}
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-2">
+              Permissions
+            </label>
+            <div className="space-y-2">
+              {["invite", "manage", "record", "delete"].map((permission) => (
+                <label key={permission} className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={initializePermissions()[permission] || false}
+                    onChange={() => handlePermissionChange(permission)}
+                    className="form-checkbox"
+                  />
+                  <span className="ml-2 capitalize">{permission}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="flex justify-end">
             <button
               type="submit"

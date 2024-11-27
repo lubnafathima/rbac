@@ -1,5 +1,5 @@
 import { MdClose } from "react-icons/md";
- 
+
 const EditUserModal = ({
   selectedUserData,
   setSelectedUserData,
@@ -114,6 +114,35 @@ const EditUserModal = ({
                 <span className="ml-2">{status}</span>
               </label>
             ))}
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-semibold mb-2">
+              Permissions
+            </label>
+            <div className="space-y-2">
+              {["invite", "manage", "record", "delete"].map((permission) => (
+                <label key={permission} className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    name={permission}
+                    checked={selectedUserData.permissions[permission]} 
+                    onChange={() =>
+                      setSelectedUserData({
+                        ...selectedUserData,
+                        permissions: {
+                          ...selectedUserData.permissions,
+                          [permission]:
+                            !selectedUserData.permissions[permission], 
+                        },
+                      })
+                    }
+                    className="form-checkbox"
+                  />
+                  <span className="ml-2 capitalize">{permission}</span>
+                </label>
+              ))}
+            </div>
           </div>
 
           <div className="flex justify-end">
