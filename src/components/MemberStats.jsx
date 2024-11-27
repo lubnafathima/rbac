@@ -26,17 +26,24 @@ const MemberStats = () => {
         const firstLetters = { admin: "", creators: "", creatorLite: "" };
 
         users.forEach(({ member_role, member_name }) => {
-          if (member_role === "Admin") {
+          const role = member_role.trim().toLowerCase();  // Normalize the role name (in lowercase)
+
+          // Check for Admin role
+          if (role === "admin") {
             counts.admin += 1;
-            firstLetters.admin = member_name.charAt(0).toUpperCase();
+            if (!firstLetters.admin) firstLetters.admin = member_name.charAt(0).toUpperCase();
           }
-          if (member_role === "Creators") {
+
+          // Check for Creators role
+          if (role === "creators") {
             counts.creators += 1;
-            firstLetters.creators = member_name.charAt(0).toUpperCase();
+            if (!firstLetters.creators) firstLetters.creators = member_name.charAt(0).toUpperCase();
           }
-          if (member_role === "Creator Lite") {
+
+          // Check for Creator Lite role (normalized to creator_lite)
+          if (role === "creator_lite") {
             counts.creatorLite += 1;
-            firstLetters.creatorLite = member_name.charAt(0).toUpperCase();
+            if (!firstLetters.creatorLite) firstLetters.creatorLite = member_name.charAt(0).toUpperCase();
           }
         });
 

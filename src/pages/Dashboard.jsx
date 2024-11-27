@@ -5,19 +5,16 @@ import {
   getDocs,
   Timestamp,
   doc,
+  updateDoc,
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import UserTable from "../components/UserTable";
 import MemberStats from "../components/MemberStats";
-import {
-  MdOutlineFileDownload,
-  MdOutlineAdd,
-  MdEdit,
-  MdDelete,
-} from "react-icons/md";
+import { MdOutlineFileDownload, MdOutlineAdd, MdDelete } from "react-icons/md";
 import Dropdown from "../components/Dropdown";
 import Modal from "../components/Modal";
+import EditUserModal from "../components/EditUserModal";
 import { statusOptions, roleOptions } from "../utils/Helper";
 
 const Dashboard = () => {
@@ -32,10 +29,9 @@ const Dashboard = () => {
     member_email: "",
     member_role: "Admin",
   });
+  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedUserData, setSelectedUserData] = useState(null);
 
-  const [selectedUsers, setSelectedUsers] = useState([]); // Track selected users
-
-  // Function to fetch users from Firestore
   const fetchUsers = useCallback(async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "users"));
@@ -43,17 +39,14 @@ const Dashboard = () => {
         id: doc.id,
         ...doc.data(),
       }));
-      setUsers(usersData); // Set users to state
+      setUsers(usersData);
     } catch (error) {
       console.error("Error fetching users: ", error);
     }
   }, []);
 
-  // Function to apply filters based on search query, role, and status
   const filterUsers = () => {
     let filtered = users;
-
-    // Apply search filter
     if (searchQuery) {
       filtered = filtered.filter(
         (user) =>
@@ -61,32 +54,27 @@ const Dashboard = () => {
           user.member_email.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
-
-    // Apply role filter
     if (selectedRole !== "all") {
-      filtered = filtered.filter((user) => user.member_role.toLowerCase() === selectedRole);
+      filtered = filtered.filter(
+        (user) => user.member_role.toLowerCase() === selectedRole
+      );
     }
-
-    // Apply status filter
     if (selectedStatus !== "All") {
       filtered = filtered.filter((user) => user.Status === selectedStatus);
     }
-
-    setFilteredUsers(filtered); // Update filtered users state
+    setFilteredUsers(filtered);
   };
 
-  // Fetch users on mount and filter users when dependencies change
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {
-    filterUsers(); // Re-filter users whenever search, role, or status changes
-  }, [searchQuery, selectedRole, selectedStatus, users]); // Dependencies include 'users'
+    filterUsers();
+  }, [searchQuery, selectedRole, selectedStatus, users]);
 
   const handleRoleChange = (role) => setSelectedRole(role.toLowerCase());
   const handleStatusChange = (status) => setSelectedStatus(status);
-
   const handleClearFilters = () => {
     setSearchQuery("");
     setSelectedRole("all");
@@ -95,7 +83,6 @@ const Dashboard = () => {
 
   const handleAddUser = async (e) => {
     e.preventDefault();
-
     const { member_name, member_email, member_role } = newUserData;
 
     if (member_name && member_email && member_role) {
@@ -107,7 +94,7 @@ const Dashboard = () => {
           Status: "Active",
           date_added: Timestamp.fromDate(new Date()),
         });
-        fetchUsers(); // Re-fetch users after adding
+        fetchUsers();
         setShowModal(false);
         setNewUserData({
           member_name: "",
@@ -130,9 +117,19 @@ const Dashboard = () => {
 
   const handleSelectAllChange = (e) => {
     if (e.target.checked) {
-      setSelectedUsers(filteredUsers.map((user) => user.id)); // Select all users
+      setSelectedUsers(filteredUsers.map((user) => user.id));
     } else {
-      setSelectedUsers([]); // Deselect all users
+      setSelectedUsers([]);
+    }
+  };
+
+  const handleDeleteUser = async (userId) => {
+    try {
+      const userDocRef = doc(db, "users", userId);
+      await deleteDoc(userDocRef); // Delete the specific user
+      fetchUsers(); // Refresh the user list
+    } catch (error) {
+      console.error("Error deleting user: ", error);
     }
   };
 
@@ -143,14 +140,40 @@ const Dashboard = () => {
           const userDocRef = doc(db, "users", userId);
           await deleteDoc(userDocRef);
         }
-        fetchUsers(); // Refresh after deletion
-        setSelectedUsers([]); // Clear selected users
+        fetchUsers();
+        setSelectedUsers([]);
       } else {
         console.error("No users selected for deletion");
       }
     } catch (error) {
       console.error("Error deleting users: ", error);
     }
+  };
+
+  const handleEditUser = async (e) => {
+    e.preventDefault(); // Prevent form submission from reloading the page
+
+    if (selectedUserData) {
+      const { id, member_name, member_email, member_role } = selectedUserData;
+      try {
+        const userDocRef = doc(db, "users", id);
+        await updateDoc(userDocRef, {
+          member_name,
+          member_email,
+          member_role,
+        });
+        fetchUsers(); // Refresh the user list
+        setShowModal(false); // Close the modal
+        setSelectedUserData(null); // Reset selected user data
+      } catch (error) {
+        console.error("Error updating user: ", error);
+      }
+    }
+  };
+
+  const openEditModal = (user) => {
+    setSelectedUserData(user); // Set selected user data for editing
+    setShowModal(true); // Show modal
   };
 
   const downloadCSV = () => {
@@ -164,10 +187,7 @@ const Dashboard = () => {
       new Date(user.date_added.seconds * 1000).toLocaleDateString(),
     ]);
 
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.join(",")),
-    ]
+    const csvContent = [headers.join(","), ...rows.map((row) => row.join(","))]
       .map((e) => e.replace(/\n/g, ""))
       .join("\n");
 
@@ -196,48 +216,29 @@ const Dashboard = () => {
             placeholder="Enter a name or email address"
             className="text-sm border rounded-full px-4 py-2 min-w-80 shadow-sm outline-none"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)} // Update search query
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
           <Dropdown
             label="Role"
             options={roleOptions}
             selected={selectedRole}
-            onChange={handleRoleChange} // Update role
+            onChange={handleRoleChange}
           />
           <Dropdown
             label="Status"
             options={statusOptions}
             selected={selectedStatus}
-            onChange={handleStatusChange} // Update status
+            onChange={handleStatusChange}
           />
           <p
             className="text-sm text-blue-600 font-bold border-b-2 border-blue-600 cursor-pointer"
-            onClick={handleClearFilters} // Clear filters
+            onClick={handleClearFilters}
           >
             Clear
           </p>
         </div>
         <div className="flex items-center gap-x-2 gap-y-4">
-          <button
-            className="text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 px-2 py-2 rounded-full flex gap-2 items-center"
-            onClick={downloadCSV}
-          >
-            <MdOutlineFileDownload className="text-xl" />
-          </button>
-          {selectedUsers.length === 1 && (
-            <>
-              <button className="text-sm font-semibold text-white bg-yellow-500 hover:bg-yellow-600 px-2 py-2 rounded-full flex gap-2 items-center">
-                <MdEdit className="text-xl" />
-              </button>
-              <button
-                onClick={deleteUsers}
-                className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-2 py-2 rounded-full flex gap-2 items-center"
-              >
-                <MdDelete className="text-xl" />
-              </button>
-            </>
-          )}
-          {selectedUsers.length > 1 && (
+          {selectedUsers.length > 0 && (
             <button
               onClick={deleteUsers}
               className="text-sm font-semibold text-white bg-red-500 hover:bg-red-600 px-2 py-2 rounded-full flex gap-2 items-center"
@@ -245,6 +246,12 @@ const Dashboard = () => {
               <MdDelete className="text-xl" />
             </button>
           )}
+          <button
+            className="text-sm font-semibold text-white bg-blue-500 hover:bg-blue-600 px-2 py-2 rounded-full flex gap-2 items-center"
+            onClick={downloadCSV}
+          >
+            <MdOutlineFileDownload className="text-xl" />
+          </button>
           <button
             className="text-sm font-semibold text-white bg-green-500 hover:bg-green-600 px-2 py-2 rounded-full shadow-sm"
             onClick={() => setShowModal(true)}
@@ -259,6 +266,8 @@ const Dashboard = () => {
         selectedUsers={selectedUsers}
         handleCheckboxChange={handleCheckboxChange}
         handleSelectAllChange={handleSelectAllChange}
+        deleteUser={handleDeleteUser} // Ensure you pass the deleteUser function correctly
+        openEditModal={openEditModal}
       />
 
       {showModal && (
@@ -267,6 +276,16 @@ const Dashboard = () => {
           setNewUserData={setNewUserData}
           roleOptions={roleOptions}
           handleAddUser={handleAddUser}
+          setShowModal={setShowModal}
+        />
+      )}
+
+      {showModal && selectedUserData && (
+        <EditUserModal
+          selectedUserData={selectedUserData}
+          setSelectedUserData={setSelectedUserData}
+          roleOptions={roleOptions}
+          handleEditUser={handleEditUser}
           setShowModal={setShowModal}
         />
       )}
