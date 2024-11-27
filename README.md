@@ -10,7 +10,6 @@ Welcome to the Role-Based Access Control (RBAC) project! This application provid
 - [Environment Variables](#environment-variables)
 - [Usage](#usage)
 - [Folder Structure](#folder-structure)
-- [Contributing](#contributing)
 - [License](#license)
 - [Acknowledgements](#acknowledgements)
 
@@ -65,25 +64,25 @@ To get started with this project, follow the steps below:
 
 4. Add Environment Variables
 
-    Create a `.env` file in the root directory and add the following variables (replace with your actual Firebase credentials):
+    Create a `.env` file in the root directory and add the following variables:
 
     ```makefile
-    REACT_APP_FIREBASE_API_KEY=your_api_key
-    REACT_APP_FIREBASE_AUTH_DOMAIN=your_auth_domain
-    REACT_APP_FIREBASE_PROJECT_ID=your_project_id
-    REACT_APP_FIREBASE_STORAGE_BUCKET=your_storage_bucket
-    REACT_APP_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
-    REACT_APP_FIREBASE_APP_ID=your_app_id
+    VITE_FIREBASE_API_KEY=AIzaSyAJ7s8hsNlYSnBjrW9C8_dO-DXujhVulzo
+    VITE_FIREBASE_AUTH_DOMAIN=vrv-security-assignment.firebaseapp.com
+    VITE_FIREBASE_PROJECT_ID=vrv-security-assignment
+    VITE_FIREBASE_STORAGE_BUCKET=vrv-security-assignment.firebasestorage.app
+    VITE_FIREBASE_MESSAGING_SENDER_ID=1091950786640
+    VITE_FIREBASE_APP_ID=1:1091950786640:web:870919e3d6b25547c4f955
     ```
 
 ## Environment Variables
 
-- `REACT_APP_FIREBASE_API_KEY`: The API key for Firebase Authentication and Firestore.
-- `REACT_APP_FIREBASE_AUTH_DOMAIN`: Firebase project’s Auth domain.
-- `REACT_APP_FIREBASE_PROJECT_ID`: Firebase Project ID.
-- `REACT_APP_FIREBASE_STORAGE_BUCKET`: Firebase Cloud Storage Bucket.
-- `REACT_APP_FIREBASE_MESSAGING_SENDER_ID`: Firebase Sender ID for messaging.
-- `REACT_APP_FIREBASE_APP_ID`: Firebase App ID for the project.
+- `VITE_FIREBASE_API_KEY`: The API key for Firebase Authentication and Firestore.
+- `VITE_FIREBASE_AUTH_DOMAIN`: Firebase project’s Auth domain.
+- `VITE_FIREBASE_PROJECT_ID`: Firebase Project ID.
+- `VITE_FIREBASE_STORAGE_BUCKET`: Firebase Cloud Storage Bucket.
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`: Firebase Sender ID for messaging.
+- `VITE_FIREBASE_APP_ID`: Firebase App ID for the project.
 
 ## Usage
 
@@ -98,14 +97,15 @@ This will start a local development server, and you can access the app by naviga
 The folder structure is organized as follows:
 
 ```bash
-/public          # Public assets (e.g., index.html, images)
+/public          # Public assets (e.g., favicon)
 /src             # All source code files
-  /components    # Reusable UI components (buttons, forms, modals)
+  /assets        # Images
+  /components    # Reusable UI components (dropdown, modal, table)
+  /firebase      # Firebase configuration
   /pages         # React components for each page in the application
-  /services      # Firebase integration and services (e.g., authentication, firestore)
-  /utils         # Utility functions (e.g., date formatting, validation)
-  App.js         # Main component that renders the app
-  index.js       # Entry point for the app
+  /utils         # Utility functions
+  App.jsx         # Main component that renders the app
+  main.jsx       # Entry point for the app
 /.env            # Environment variables (not included in the repo for security)
 .gitignore       # Gitignore file to exclude sensitive files
 README.md        # This documentation file
