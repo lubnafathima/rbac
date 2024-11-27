@@ -6,7 +6,7 @@ const UserTable = ({
   handleCheckboxChange,
   handleSelectAllChange,
   deleteUser,
-  openEditModal
+  openEditModal,
 }) => {
   return (
     <div>
@@ -48,14 +48,13 @@ const UserTable = ({
               </td>
               <td className="px-4 py-4">{user.Status}</td>
               <td className="px-4 py-4 flex items-center gap-2">
-                {/* Edit Button */}
                 <MdEdit
                   className="text-blue-500 hover:text-blue-400 transition-all transition-200 text-xl cursor-pointer"
-                  onClick={() => openEditModal(user)} // Open the Edit Modal with the selected user
+                  onClick={() => openEditModal(user)}
                 />
-                {/* Delete Button */}
+
                 <MdDelete
-                  onClick={() => deleteUser(user.id)} // Delete the selected user
+                  onClick={() => deleteUser(user.id)}
                   className="text-red-500 hover:text-red-400 transition-all transition-200 text-xl cursor-pointer"
                 />
               </td>

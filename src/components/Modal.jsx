@@ -1,4 +1,3 @@
-import React from "react";
 import { MdClose } from "react-icons/md";
 
 const Modal = ({
@@ -12,8 +11,9 @@ const Modal = ({
     e.stopPropagation();
   };
 
-  // Filter out the "All" role option
-  const filteredRoleOptions = roleOptions.filter(role => role.value !== "all");
+  const filteredRoleOptions = roleOptions.filter(
+    (role) => role.value !== "all"
+  );
 
   return (
     <div
@@ -23,7 +23,10 @@ const Modal = ({
       <div className="bg-white p-6 rounded-lg w-96" onClick={handleModalClick}>
         <div className="flex justify-between items-start">
           <h2 className="text-xl font-semibold mb-4">Invite Member</h2>
-          <MdClose className="text-xl cursor-pointer hover:text-gray-600 transition-colors duration-300" onClick={() => setShowModal(false)} />
+          <MdClose
+            className="text-xl cursor-pointer hover:text-gray-600 transition-colors duration-300"
+            onClick={() => setShowModal(false)}
+          />
         </div>
         <form onSubmit={handleAddUser}>
           <div className="mb-4">

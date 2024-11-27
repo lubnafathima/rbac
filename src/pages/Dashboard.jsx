@@ -3,6 +3,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  onSnapshot,
   Timestamp,
   doc,
   updateDoc,
@@ -43,7 +44,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error("Error fetching users: ", error);
     }
-  }, []);
+  });
 
   const filterUsers = () => {
     let filtered = users;
@@ -72,6 +73,22 @@ const Dashboard = () => {
   useEffect(() => {
     filterUsers();
   }, [searchQuery, selectedRole, selectedStatus, users]);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const usersData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setUsers(usersData);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    setFilteredUsers(users);
+  }, [users]);
 
   const handleRoleChange = (role) => setSelectedRole(role.toLowerCase());
   const handleStatusChange = (status) => setSelectedStatus(status);
@@ -126,8 +143,8 @@ const Dashboard = () => {
   const handleDeleteUser = async (userId) => {
     try {
       const userDocRef = doc(db, "users", userId);
-      await deleteDoc(userDocRef); // Delete the specific user
-      fetchUsers(); // Refresh the user list
+      await deleteDoc(userDocRef);
+      fetchUsers();
     } catch (error) {
       console.error("Error deleting user: ", error);
     }
@@ -151,29 +168,29 @@ const Dashboard = () => {
   };
 
   const handleEditUser = async (e) => {
-    e.preventDefault(); // Prevent form submission from reloading the page
+    e.preventDefault();
 
-    if (selectedUserData) {
-      const { id, member_name, member_email, member_role } = selectedUserData;
-      try {
-        const userDocRef = doc(db, "users", id);
-        await updateDoc(userDocRef, {
-          member_name,
-          member_email,
-          member_role,
-        });
-        fetchUsers(); // Refresh the user list
-        setShowModal(false); // Close the modal
-        setSelectedUserData(null); // Reset selected user data
-      } catch (error) {
-        console.error("Error updating user: ", error);
-      }
+    const userRef = doc(db, "users", selectedUserData.id);
+
+    try {
+      await updateDoc(userRef, {
+        member_name: selectedUserData.member_name,
+        member_email: selectedUserData.member_email,
+        member_role: selectedUserData.member_role,
+        Status: selectedUserData.Status,
+      });
+
+      fetchUsers();
+
+      setShowModal(false);
+    } catch (error) {
+      console.error("Error updating user: ", error);
     }
   };
 
   const openEditModal = (user) => {
-    setSelectedUserData(user); // Set selected user data for editing
-    setShowModal(true); // Show modal
+    setSelectedUserData(user);
+    setShowModal(true);
   };
 
   const downloadCSV = () => {
@@ -207,7 +224,7 @@ const Dashboard = () => {
   return (
     <div className="w-full flex flex-col mt-10 px-2 md:px-10 lg:px-20">
       <h1 className="text-4xl font-bold border-b-2 pb-6">Workspace Settings</h1>
-      <MemberStats />
+      <MemberStats users={filteredUsers} />
 
       <div className="my-6 flex flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-4">
@@ -266,7 +283,7 @@ const Dashboard = () => {
         selectedUsers={selectedUsers}
         handleCheckboxChange={handleCheckboxChange}
         handleSelectAllChange={handleSelectAllChange}
-        deleteUser={handleDeleteUser} // Ensure you pass the deleteUser function correctly
+        deleteUser={handleDeleteUser}
         openEditModal={openEditModal}
       />
 
@@ -284,6 +301,7 @@ const Dashboard = () => {
         <EditUserModal
           selectedUserData={selectedUserData}
           setSelectedUserData={setSelectedUserData}
+          statusOptions={statusOptions}
           roleOptions={roleOptions}
           handleEditUser={handleEditUser}
           setShowModal={setShowModal}
